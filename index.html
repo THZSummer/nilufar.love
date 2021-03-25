@@ -63,8 +63,8 @@
 	});
 </script>
 <script type="text/javascript">
-	var width = window.screen.width;
-	var height = window.screen.height;
+	var width = Math.max(window.innerWidth, window.outerWidth, screen.width);
+	var height = Math.max(window.innerHeight, window.outerHeight, screen.height);
 
 	var c = document.getElementById('draw');
 	var ctx = c.getContext("2d");
@@ -77,25 +77,25 @@
 
 	window.onresize = () => {
 		drawer.resize();
-		refresh();
+		drawer.refresh();
 	}
 
 	var randomer = {
 		randomInt: () => Math.round(Math.random() * Math.pow(10, 4)),
-		randomX: () => randomer.randomInt() % width,
-		randomY: () => randomer.randomInt() % height,
+		randomX: () => randomer.randomInt() % (width + 1),
+		randomY: () => randomer.randomInt() % (height + 1),
 		randomColor: () => 'rgba(' + randomer.randomInt() % 256 + ',' + randomer.randomInt() % 256 + ',' + randomer.randomInt() % 256 + ',' + Math.random() + ')'
 	}
 
 	var drawer = {
 		resize: () => {
-			c.width = c.clientWidth;
-			c.height = c.clientHeight;
+			c.width = document.documentElement.clientWidth;
+			c.height = document.documentElement.clientHeight;
 		},
 		changeBackgroundColor: () => c.style.backgroundColor = randomer.randomColor(),
 		drawPoint: () => {
 			imageCtx.beginPath();
-			imageCtx.arc(randomer.randomX(), randomer.randomX(), 1, 0, Math.PI * 2, true);
+			imageCtx.arc(randomer.randomX(), randomer.randomY(), 1, 0, Math.PI * 2, true);
 			imageCtx.closePath();
 
 			imageCtx.fillStyle = randomer.randomColor();
@@ -117,7 +117,7 @@
 			}
 		},
 		refresh: () => {
-			ctx.clearRect(0, 0, width, height);
+			ctx.clearRect(0, 0, c.width, c.height);
 			ctx.drawImage(image, window.screenX, window.screenY, c.width, c.height, 0, 0, c.width, c.height);
 		}
 	}
