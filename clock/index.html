@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Nilufar.Love.Clock</title>
+
+	<style type="text/css">
+		* {
+			margin: 0;
+			padding: 0;
+		}
+
+		html {
+			height: 100%;
+		}
+
+		body {
+			height: 100%;
+			background-color: black;
+		}
+
+		#draw {
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+</head>
+
+<body>
+	<canvas id="draw" ondblclick="fullscreen();"></canvas>
+</body>
+<script>
+	function fullscreen() {
+		if (document.fullscreenElement ||
+			document.mozFullScreenElement ||
+			document.webkitFullscreenElement ||
+			document.msFullscreenElement) {
+			if (document.exitFullscreen) {
+				document.exitFullscreen();
+			} else if (document.mozCancelFullScreen) {
+				document.mozCancelFullScreen();
+			} else if (document.webkitExitFullscreen) {
+				document.webkitExitFullscreen();
+			} else if (document.msExitFullscreen) {
+				document.msExitFullscreen();
+			}
+		} else {
+			if (document.documentElement.requestFullscreen) {
+				document.documentElement.requestFullscreen();
+			} else if (document.documentElement.mozRequestFullScreen) {
+				document.documentElement.mozRequestFullScreen();
+			} else if (document.documentElement.webkitRequestFullscreen) {
+				document.documentElement.webkitRequestFullscreen();
+			} else if (document.documentElement.body.msRequestFullscreen) {
+				document.documentElement.body.msRequestFullscreen();
+			}
+		}
+	}
+
+	document.addEventListener('keypress', function (e) {
+		fullscreen();
+	});
+</script>
+<script type="text/javascript">
+
+	var c = document.getElementById('draw');
+	var ctx = c.getContext("2d");
+	c.style.backgroundColor = "#E7E6E6";
+	var count = 0;
+	var width = 0;
+	var height = 0;
+
+	init();
+	drawClockPanel();
+
+	function init() {
+		c.width = c.clientWidth;
+		c.height = c.clientHeight;
+
+		width = c.width;
+		height = c.height;
+		// drawClockPanel();
+	}
+
+	window.onresize = function (e) {
+		let xS = c.clientWidth / width;
+		let yS = c.clientHeight / height;
+		let data = ctx.getImageData(0, 0, width, height);
+		init();
+		ctx.scale(xS, yS);
+		ctx.putImageData(data, 0, 0);
+	}
+
+	function randomColor() {
+		let r = Math.round(Math.random() * Math.pow(10, 3)) % 256;
+		let g = Math.round(Math.random() * Math.pow(10, 3)) % 256;
+		let b = Math.round(Math.random() * Math.pow(10, 3)) % 256;
+		let a = Math.random();
+		return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+	}
+
+	function draw() {
+		ctx.clearRect(0, 0, width, height);
+		ctx.strokeStyle = randomColor();	// 画笔色
+		ctx.fillStyle = randomColor();	// 填充色
+		ctx.beginPath();	// 开始
+		ctx.lineWidth = 12;
+		var r = Math.min(width, height) * 0.4;
+		ctx.arc(width / 2, height / 2, r, 0, Math.PI * 2, true);
+		ctx.closePath();	// 闭合
+		ctx.stroke();	// 绘画
+		ctx.lineWidth = 1;
+	}
+
+	function drawClockPanel() {
+		ctx.clearRect(0, 0, width, height);
+		ctx.strokeStyle = randomColor();	// 画笔色
+		ctx.fillStyle = randomColor();	// 填充色
+		ctx.beginPath();	// 开始
+		ctx.lineWidth = 12;
+		var r = Math.min(width, height) * 0.4;
+		ctx.arc(width / 2, height / 2, r, 0, Math.PI * 2, true);
+		ctx.closePath();	// 闭合
+		ctx.stroke();	// 绘画
+		ctx.lineWidth = 1;
+
+		var grd = ctx.createRadialGradient(width / 2, height / 2, r / 2 - 40, width / 2, height / 2, r / 2);
+		grd.addColorStop(0, "#ABABAB");
+		grd.addColorStop(1, "#000000");
+		ctx.fillStyle = grd;
+		for (let i = 0; i < 12; i++) {
+			var delte = - 1 / 48;
+			ctx.beginPath();
+			ctx.arc(width / 2, height / 2, r / 2, Math.PI * (i * 4 - 1) / 48, Math.PI * (delte + (i * 4 + 1) / 48), true);
+			ctx.closePath();	// 闭合
+			ctx.fill();
+		}
+
+	}
+
+</script>
+
+</html>

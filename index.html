@@ -63,64 +63,86 @@
 	});
 </script>
 <script type="text/javascript">
-	var width = window.screen.availWidth;
-	var height = window.screen.availHeight;
+	var width = window.screen.width;
+	var height = window.screen.height;
 
 	var c = document.getElementById('draw');
 	var ctx = c.getContext("2d");
+
+	var image = document.createElement('canvas');
+	var imageCtx = image.getContext('2d');
+	image.width = width;
+	image.height = height;
 	var count = 0;
 
-	c.width = width;
-	c.height = height;
-
-	function randomColor() {
-		let r = Math.round(Math.random() * Math.pow(10, 3)) % 256;
-		let g = Math.round(Math.random() * Math.pow(10, 3)) % 256;
-		let b = Math.round(Math.random() * Math.pow(10, 3)) % 256;
-		let a = Math.random();
-		return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+	window.onresize = () => {
+		drawer.resize();
+		refresh();
 	}
 
-	function randomX() {
-		return Math.round(Math.random() * Math.pow(10, 4)) % width;
+	var randomer = {
+		randomInt: () => Math.round(Math.random() * Math.pow(10, 4)),
+		randomX: () => randomer.randomInt() % width,
+		randomY: () => randomer.randomInt() % height,
+		randomColor: () => 'rgba(' + randomer.randomInt() % 256 + ',' + randomer.randomInt() % 256 + ',' + randomer.randomInt() % 256 + ',' + Math.random() + ')'
 	}
 
-	function randomY() {
-		return Math.round(Math.random() * Math.pow(10, 4)) % height;
-	}
+	var drawer = {
+		resize: () => {
+			c.width = c.clientWidth;
+			c.height = c.clientHeight;
+		},
+		changeBackgroundColor: () => c.style.backgroundColor = randomer.randomColor(),
+		drawPoint: () => {
+			imageCtx.beginPath();
+			imageCtx.arc(randomer.randomX(), randomer.randomX(), 1, 0, Math.PI * 2, true);
+			imageCtx.closePath();
 
-	function changeBackgroundColor() {
-		c.style.backgroundColor = randomColor();
-	}
+			imageCtx.fillStyle = randomer.randomColor();
+			imageCtx.fill();
+		},
+		drawArc: () => {
+			imageCtx.beginPath();	// 开始
+			imageCtx.arc(randomer.randomX(), randomer.randomY(), randomer.randomInt() % count++ + 5, 0, Math.PI * 2, true);
+			imageCtx.closePath();	// 闭合
 
-	function drawPoint() {
-		ctx.beginPath();
-		ctx.arc(randomX(), randomY(), 1, 0, Math.PI * 2, true);
-		ctx.closePath();
+			imageCtx.strokeStyle = randomer.randomColor();	// 画笔色
+			imageCtx.fillStyle = randomer.randomColor();	// 填充色
+			imageCtx.stroke();	// 绘画
+			imageCtx.fill();	// 填充
 
-		ctx.fillStyle = randomColor();
-		ctx.fill();
-	}
-
-	function paintArc() {
-		ctx.beginPath();	// 开始
-		ctx.arc(randomX(), randomY(), randomX() % count++ + 5, 0, Math.PI * 2, true);
-		ctx.closePath();	// 闭合
-
-		ctx.strokeStyle = randomColor();	// 画笔色
-		ctx.fillStyle = randomColor();	// 填充色
-		ctx.stroke();	// 绘画
-		ctx.fill();	// 填充
-
-		if (count > 1314) {
-			count = 0;
+			if (count > 1314) {
+				count = 0;
+				imageCtx.clearRect(0, 0, width, height);
+			}
+		},
+		refresh: () => {
 			ctx.clearRect(0, 0, width, height);
+			ctx.drawImage(image, window.screenX, window.screenY, c.width, c.height, 0, 0, c.width, c.height);
 		}
 	}
 
-	var bcolor = setInterval('changeBackgroundColor();', 1000);
-	var points = setInterval('drawPoint();', 10);
-	var arc = setInterval('paintArc();', 500);
+	var runner = {
+		run: () => {
+			drawer.resize();
+
+			setInterval(() => {
+				drawer.changeBackgroundColor();
+			}, 1000);
+
+			setInterval(() => {
+				drawer.drawPoint();
+				drawer.refresh();
+			}, 10);
+
+			setInterval(() => {
+				drawer.drawArc();
+				drawer.refresh();
+			}, 500);
+		}
+	}
+
+	runner.run();
 
 </script>
 
