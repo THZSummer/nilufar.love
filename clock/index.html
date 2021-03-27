@@ -30,6 +30,7 @@
 <body>
 	<canvas id="draw" ondblclick="fullscreen();"></canvas>
 </body>
+
 <script>
 	function fullscreen() {
 		if (document.fullscreenElement ||
@@ -70,9 +71,63 @@
 	var count = 0;
 	var width = 0;
 	var height = 0;
+	var r = 0;
 
-	init();
-	drawClockPanel();
+	var pc = document.createElement('canvas');
+	var pctx = pc.getContext("2d");
+
+	var hc = document.createElement('canvas');
+	var hctx = hc.getContext("2d");
+
+	var mc = document.createElement('canvas');
+	var mctx = mc.getContext("2d");
+
+	var sc = document.createElement('canvas');
+	var sctx = sc.getContext("2d");
+
+	var run;
+
+	function start() {
+		init();
+		drawClockPanel();
+		clearInterval(run);
+		var hr = true;
+		var mr = true;
+		var sr = true;
+		run = setInterval(() => {
+			ctx.clearRect(-width / 2, -height / 2, width, height);
+			ctx.drawImage(pc, 0, 0, width, height);
+			var today = new Date();
+			var h = today.getHours();
+			var m = today.getMinutes();
+			var s = today.getSeconds();
+
+			var text = h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+			ctx.strokeText(text, 100, 100);
+			if (hr) {
+				hctx.rotate(((h % 12 * 60 + m) * 60 + s - 1) * Math.PI / 21600);
+				hr = false;
+			}
+			drawHours();
+			if (mr) {
+				mctx.rotate((m * 60 + s - 1) * Math.PI / 1800);
+				mr = false;
+			}
+			drawMinutes();
+			if (sr) {
+				sctx.rotate((s - 1) * Math.PI / 30);
+				sr = false;
+			}
+			drawSeconds();
+			ctx.drawImage(hc, 0, 0, width, height);
+			ctx.drawImage(mc, 0, 0, width, height);
+			ctx.drawImage(sc, 0, 0, width, height);
+			ctx.arc(width / 2, height / 2, 20, 0, Math.PI * 2, true);
+			ctx.fill();
+		}, 1000);
+	}
+
+	start();
 
 	function init() {
 		c.width = c.clientWidth;
@@ -80,61 +135,70 @@
 
 		width = c.width;
 		height = c.height;
-		// drawClockPanel();
+
+		ctx.font = "30px Times New Roman";
+
+		r = Math.min(width, height) * 0.4;
+
+		pc.width = width;
+		pc.height = height;
+		pctx.translate(width / 2, height / 2);
+
+		hc.width = width;
+		hc.height = height;
+		hctx.translate(width / 2, height / 2);
+
+		mc.width = width;
+		mc.height = height;
+		mctx.translate(width / 2, height / 2);
+
+		sc.width = width;
+		sc.height = height;
+		sctx.translate(width / 2, height / 2);
 	}
 
-	window.onresize = function (e) {
-		let xS = c.clientWidth / width;
-		let yS = c.clientHeight / height;
-		let data = ctx.getImageData(0, 0, width, height);
-		init();
-		ctx.scale(xS, yS);
-		ctx.putImageData(data, 0, 0);
+	window.onresize = start;
+
+	function drawHours() {
+		hctx.fillStyle = "blue";
+		hctx.clearRect(-width / 2, -height / 2, width, height);
+		hctx.rotate(Math.PI / 21600);
+		hctx.fillRect(-10, -r * 0.4, 20, r * 0.4);
 	}
 
-	function randomColor() {
-		let r = Math.round(Math.random() * Math.pow(10, 3)) % 256;
-		let g = Math.round(Math.random() * Math.pow(10, 3)) % 256;
-		let b = Math.round(Math.random() * Math.pow(10, 3)) % 256;
-		let a = Math.random();
-		return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+	function drawMinutes() {
+		mctx.fillStyle = "red";
+		mctx.clearRect(-width / 2, -height / 2, width, height);
+		mctx.rotate(Math.PI / 1800);
+		mctx.fillRect(-8, -r * 0.6, 16, r * 0.6);
 	}
 
-	function draw() {
-		ctx.clearRect(0, 0, width, height);
-		ctx.strokeStyle = randomColor();	// 画笔色
-		ctx.fillStyle = randomColor();	// 填充色
-		ctx.beginPath();	// 开始
-		ctx.lineWidth = 12;
-		var r = Math.min(width, height) * 0.4;
-		ctx.arc(width / 2, height / 2, r, 0, Math.PI * 2, true);
-		ctx.closePath();	// 闭合
-		ctx.stroke();	// 绘画
-		ctx.lineWidth = 1;
+	function drawSeconds() {
+		sctx.fillStyle = "black";
+		sctx.clearRect(-width / 2, -height / 2, width, height);
+		sctx.rotate(Math.PI / 30);
+		sctx.fillRect(-5, -r * 0.8, 10, r * 0.8);
 	}
 
 	function drawClockPanel() {
-		ctx.clearRect(0, 0, width, height);
-		ctx.strokeStyle = randomColor();	// 画笔色
-		ctx.fillStyle = randomColor();	// 填充色
-		ctx.beginPath();	// 开始
-		ctx.lineWidth = 12;
-		var r = Math.min(width, height) * 0.4;
-		ctx.arc(width / 2, height / 2, r, 0, Math.PI * 2, true);
-		ctx.closePath();	// 闭合
-		ctx.stroke();	// 绘画
-		ctx.lineWidth = 1;
+		pctx.clearRect(-width / 2, -height / 2, width, height);
+		pctx.strokeStyle = "aqua";	// 画笔色
+		pctx.lineWidth = 6;
+		pctx.arc(0, 0, r * 1.15, 0, Math.PI * 2, true);
+		pctx.stroke();	// 绘画
 
-		var grd = ctx.createRadialGradient(width / 2, height / 2, r / 2 - 40, width / 2, height / 2, r / 2);
+		var grd = pctx.createRadialGradient(0, 0, r - 40, 0, 0, r);
 		grd.addColorStop(0, "#ABABAB");
 		grd.addColorStop(1, "#000000");
-		ctx.fillStyle = grd;
+		pctx.fillStyle = grd;
+		pctx.beginPath();
+		pctx.arc(0, 0, r, 0, Math.PI * 2, true);
+		pctx.closePath();	// 闭合
+		pctx.fill();
+
 		for (let i = 0; i < 12; i++) {
-			var delte = - 1 / 48;
-			ctx.beginPath();
-			ctx.arc(width / 2, height / 2, r / 2, Math.PI * (i * 4 - 1) / 48, Math.PI * (delte + (i * 4 + 1) / 48), true);
-			ctx.closePath();	// 闭合
-			ctx.fill();
+			pctx.fillRect(-10, -r * 1.1, 20, r * 1.1);
+			pctx.rotate(Math.PI / 6);
 		}
 
 	}
