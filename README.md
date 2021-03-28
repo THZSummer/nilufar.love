@@ -8,7 +8,9 @@ Lively Wallpaper
 #### 软件架构
 软件架构说明
 
+http://nilufar.love
 
+http://nilufar.love/clock
 #### 安装教程
 
 1.  xxxx

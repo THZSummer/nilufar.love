@@ -8,6 +8,9 @@ Lively Wallpaper
 #### Software Architecture
 Software architecture description
 
+http://nilufar.love
+
+http://nilufar.love/clock
 #### Installation
 
 1.  xxxx

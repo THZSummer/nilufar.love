@@ -64,6 +64,7 @@
 	});
 </script>
 <script type="text/javascript">
+	var hz = 1;
 
 	var c = document.getElementById('draw');
 	var ctx = c.getContext("2d");
@@ -72,18 +73,30 @@
 	var width = 0;
 	var height = 0;
 	var r = 0;
+	var nx;
+	var ny;
 
 	var pc = document.createElement('canvas');
 	var pctx = pc.getContext("2d");
+	var grd;
 
 	var hc = document.createElement('canvas');
 	var hctx = hc.getContext("2d");
+	var hw;
+	var hh;
+	var hro;
 
 	var mc = document.createElement('canvas');
 	var mctx = mc.getContext("2d");
+	var mw;
+	var mh;
+	var mro;
 
 	var sc = document.createElement('canvas');
 	var sctx = sc.getContext("2d");
+	var sw;
+	var sh;
+	var sro;
 
 	var run;
 
@@ -94,40 +107,56 @@
 		var hr = true;
 		var mr = true;
 		var sr = true;
-		run = setInterval(() => {
-			ctx.clearRect(-width / 2, -height / 2, width, height);
-			ctx.drawImage(pc, 0, 0, width, height);
-			var today = new Date();
-			var h = today.getHours();
-			var m = today.getMinutes();
-			var s = today.getSeconds();
 
-			var text = h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
-			ctx.strokeText(text, 100, 100);
+		function refresh() {
+			ctx.clearRect(-nx, -ny, width, height);
+			ctx.drawImage(pc, 0, 0, width, height);
+			let today = new Date();
+			let h = today.getHours();
+			let m = today.getMinutes();
+			let s = today.getSeconds();
+			let ss = today.getMilliseconds();
+
+			let date = getDate(today);
+			let week = getWeek(today);
+			let time = getTime(today);
+			let dl = ctx.measureText(date).width;
+			let wl = ctx.measureText(week).width;
+			let tl = ctx.measureText(time).width;
+			ctx.fillText(date, (width - dl) / 2, ny - r * 0.6);	// 文字默认左下对齐
+			ctx.fillText(week, (width - wl) / 2, ny + r * 0.4);	// 文字默认左下对齐
+			ctx.strokeText(time, (width - tl) / 2, ny + r * 0.55 + 30 + r / 40);	// 文字默认左下对齐
+			
 			if (hr) {
 				hctx.rotate(((h % 12 * 60 + m) * 60 + s - 1) * Math.PI / 21600);
 				hr = false;
 			}
-			drawHours();
 			if (mr) {
 				mctx.rotate((m * 60 + s - 1) * Math.PI / 1800);
 				mr = false;
 			}
-			drawMinutes();
 			if (sr) {
 				sctx.rotate((s - 1) * Math.PI / 30);
 				sr = false;
 			}
+			
+			drawHours();
+			drawMinutes();
 			drawSeconds();
 			ctx.drawImage(hc, 0, 0, width, height);
 			ctx.drawImage(mc, 0, 0, width, height);
 			ctx.drawImage(sc, 0, 0, width, height);
-			ctx.arc(width / 2, height / 2, 20, 0, Math.PI * 2, true);
+			ctx.arc(nx, ny, r / 15, 0, Math.PI * 2, true);
 			ctx.fill();
-		}, 1000);
+		}
+
+		run = setInterval(() => {
+			refresh();
+		}, 1000 / hz);
 	}
 
-	start();
+	window.onload = start;
+	window.onresize = start;
 
 	function init() {
 		c.width = c.clientWidth;
@@ -139,57 +168,75 @@
 		ctx.font = "30px Times New Roman";
 
 		r = Math.min(width, height) * 0.4;
+		nx = width / 2;
+		ny = height / 2;
 
 		pc.width = width;
 		pc.height = height;
-		pctx.translate(width / 2, height / 2);
+		pctx.translate(nx, ny);
+		grd = pctx.createRadialGradient(0, 0, r - 40, 0, 0, r);
+		grd.addColorStop(0, "#ABABAB");
+		grd.addColorStop(1, "#000000");
 
 		hc.width = width;
 		hc.height = height;
-		hctx.translate(width / 2, height / 2);
+		hw = r / 15;
+		hh = r * 0.4;
+		hro = Math.PI / (21600 * hz);
+		hctx.translate(nx, ny);
+		hctx.fillStyle = "#000000";
+
 
 		mc.width = width;
 		mc.height = height;
-		mctx.translate(width / 2, height / 2);
+		mw = r / 20;
+		mh = r * 0.6;
+		mro = Math.PI / (1800 * hz);
+		mctx.translate(nx, ny);
+		mctx.fillStyle = "#292929";
 
 		sc.width = width;
 		sc.height = height;
-		sctx.translate(width / 2, height / 2);
+		sw = r / 30;
+		sh = r * 0.8;
+		sro = Math.PI / (30 * hz);
+		sctx.translate(nx, ny);
+		sctx.fillStyle = "#3A3A3A";
 	}
 
-	window.onresize = start;
+	var drawHours = () => drawTimeRect(hctx, hro, -hw / 2, -hh, hw, hh);
+	var drawMinutes = () => drawTimeRect(mctx, mro, -mw / 2, -mh, mw, mh);
+	var drawSeconds = () => drawTimeRect(sctx, sro, -sw / 2, -sh, sw, sh);
 
-	function drawHours() {
-		hctx.fillStyle = "blue";
-		hctx.clearRect(-width / 2, -height / 2, width, height);
-		hctx.rotate(Math.PI / 21600);
-		hctx.fillRect(-10, -r * 0.4, 20, r * 0.4);
+	function drawTimeRect(context, angle, x, y, w, h) {
+		context.clearRect(-nx, -ny, width, height);
+		context.rotate(angle);
+		context.fillRect(x, y, w, h);
 	}
 
-	function drawMinutes() {
-		mctx.fillStyle = "red";
-		mctx.clearRect(-width / 2, -height / 2, width, height);
-		mctx.rotate(Math.PI / 1800);
-		mctx.fillRect(-8, -r * 0.6, 16, r * 0.6);
+	function getDate(today) {
+		return today.getFullYear() + "年" + (today.getMonth() < 9 ? "0" : "") + (today.getMonth() + 1) + "月" + today.getDate() + "日";
 	}
 
-	function drawSeconds() {
-		sctx.fillStyle = "black";
-		sctx.clearRect(-width / 2, -height / 2, width, height);
-		sctx.rotate(Math.PI / 30);
-		sctx.fillRect(-5, -r * 0.8, 10, r * 0.8);
+	function getWeek(today) {
+		let weeks = ["日", "一", "二", "三", "四", "五", "六"];
+		return "星期" + weeks[today.getDay()];
+	}
+
+	function getTime(today) {
+		let h = today.getHours();
+		let m = today.getMinutes();
+		let s = today.getSeconds();
+		return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
 	}
 
 	function drawClockPanel() {
-		pctx.clearRect(-width / 2, -height / 2, width, height);
-		pctx.strokeStyle = "aqua";	// 画笔色
-		pctx.lineWidth = 6;
+		pctx.clearRect(-nx, -ny, width, height);
+		pctx.strokeStyle = "#3B3838";	// 画笔色
+		pctx.lineWidth = r / 20;
 		pctx.arc(0, 0, r * 1.15, 0, Math.PI * 2, true);
 		pctx.stroke();	// 绘画
 
-		var grd = pctx.createRadialGradient(0, 0, r - 40, 0, 0, r);
-		grd.addColorStop(0, "#ABABAB");
-		grd.addColorStop(1, "#000000");
 		pctx.fillStyle = grd;
 		pctx.beginPath();
 		pctx.arc(0, 0, r, 0, Math.PI * 2, true);
@@ -201,6 +248,11 @@
 			pctx.rotate(Math.PI / 6);
 		}
 
+		pctx.lineWidth = r / 40;
+		pctx.strokeStyle = "#3B3838";
+		pctx.fillStyle = "#D1D1D1";	// 画笔色
+		pctx.fillRect(-100, r * 0.55, 200, 60);
+		pctx.strokeRect(-100, r * 0.55, 200, 60);
 	}
 
 </script>
