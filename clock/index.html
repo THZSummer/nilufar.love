@@ -64,7 +64,7 @@
 	});
 </script>
 <script type="text/javascript">
-	var hz = 1;
+	var fps = 25;
 
 	var c = document.getElementById('draw');
 	var ctx = c.getContext("2d");
@@ -85,18 +85,21 @@
 	var hw;
 	var hh;
 	var hro;
+	var lhro;
 
 	var mc = document.createElement('canvas');
 	var mctx = mc.getContext("2d");
 	var mw;
 	var mh;
 	var mro;
+	var lmro;
 
 	var sc = document.createElement('canvas');
 	var sctx = sc.getContext("2d");
 	var sw;
 	var sh;
 	var sro;
+	var lsro;
 
 	var run;
 
@@ -104,42 +107,13 @@
 		init();
 		drawClockPanel();
 		clearInterval(run);
-		var hr = true;
-		var mr = true;
-		var sr = true;
 
 		function refresh() {
+			reset();
 			ctx.clearRect(-nx, -ny, width, height);
 			ctx.drawImage(pc, 0, 0, width, height);
-			let today = new Date();
-			let h = today.getHours();
-			let m = today.getMinutes();
-			let s = today.getSeconds();
-			let ss = today.getMilliseconds();
 
-			let date = getDate(today);
-			let week = getWeek(today);
-			let time = getTime(today);
-			let dl = ctx.measureText(date).width;
-			let wl = ctx.measureText(week).width;
-			let tl = ctx.measureText(time).width;
-			ctx.fillText(date, (width - dl) / 2, ny - r * 0.6);	// 文字默认左下对齐
-			ctx.fillText(week, (width - wl) / 2, ny + r * 0.4);	// 文字默认左下对齐
-			ctx.strokeText(time, (width - tl) / 2, ny + r * 0.55 + 30 + r / 40);	// 文字默认左下对齐
-			
-			if (hr) {
-				hctx.rotate(((h % 12 * 60 + m) * 60 + s - 1) * Math.PI / 21600);
-				hr = false;
-			}
-			if (mr) {
-				mctx.rotate((m * 60 + s - 1) * Math.PI / 1800);
-				mr = false;
-			}
-			if (sr) {
-				sctx.rotate((s - 1) * Math.PI / 30);
-				sr = false;
-			}
-			
+			drawText();
 			drawHours();
 			drawMinutes();
 			drawSeconds();
@@ -152,29 +126,32 @@
 
 		run = setInterval(() => {
 			refresh();
-		}, 1000 / hz);
+		}, 1000 / fps);
 	}
 
-	window.onload = start;
+
 	window.onresize = start;
+	window.onpageshow = start;
+	window.onpagehide = () => clearInterval(run);
 
 	function init() {
-		c.width = c.clientWidth;
-		c.height = c.clientHeight;
+		c.width = document.body.clientWidth;
+		c.height = document.body.clientHeight;
 
 		width = c.width;
 		height = c.height;
 
-		ctx.font = "30px Times New Roman";
 
 		r = Math.min(width, height) * 0.4;
 		nx = width / 2;
 		ny = height / 2;
 
+		ctx.font = r / 10 + "px Times New Roman";
+
 		pc.width = width;
 		pc.height = height;
 		pctx.translate(nx, ny);
-		grd = pctx.createRadialGradient(0, 0, r - 40, 0, 0, r);
+		grd = pctx.createRadialGradient(0, 0, r * 0.88, 0, 0, r);
 		grd.addColorStop(0, "#ABABAB");
 		grd.addColorStop(1, "#000000");
 
@@ -182,7 +159,8 @@
 		hc.height = height;
 		hw = r / 15;
 		hh = r * 0.4;
-		hro = Math.PI / (21600 * hz);
+		hro = Math.PI / (21600 * fps);
+		lhro = 0;
 		hctx.translate(nx, ny);
 		hctx.fillStyle = "#000000";
 
@@ -191,7 +169,8 @@
 		mc.height = height;
 		mw = r / 20;
 		mh = r * 0.6;
-		mro = Math.PI / (1800 * hz);
+		mro = Math.PI / (1800 * fps);
+		lmro = 0;
 		mctx.translate(nx, ny);
 		mctx.fillStyle = "#292929";
 
@@ -199,9 +178,28 @@
 		sc.height = height;
 		sw = r / 30;
 		sh = r * 0.8;
-		sro = Math.PI / (30 * hz);
+		sro = Math.PI / (30 * fps);
+		lsro = 0;
 		sctx.translate(nx, ny);
 		sctx.fillStyle = "#3A3A3A";
+	}
+
+	function reset() {
+		let today = new Date();
+		let h = today.getHours();
+		let m = today.getMinutes();
+		let s = today.getSeconds();
+		let ss = today.getMilliseconds();
+
+		hctx.rotate(-lhro);
+		mctx.rotate(-lmro);
+		sctx.rotate(-lsro);
+		lhro = (((h * 60 + m) * 60 + s) * 1000 + ss) / (1000 / fps) * hro;
+		lmro = ((m * 60 + s) * 1000 + ss) / (1000 / fps) * mro;
+		lsro = (s * 1000 + ss) / (1000 / fps) * sro;
+		hctx.rotate(lhro);
+		mctx.rotate(lmro);
+		sctx.rotate(lsro);
 	}
 
 	var drawHours = () => drawTimeRect(hctx, hro, -hw / 2, -hh, hw, hh);
@@ -210,8 +208,21 @@
 
 	function drawTimeRect(context, angle, x, y, w, h) {
 		context.clearRect(-nx, -ny, width, height);
-		context.rotate(angle);
 		context.fillRect(x, y, w, h);
+	}
+
+	function drawText() {
+		let today = new Date();
+
+		let date = getDate(today);
+		let week = getWeek(today);
+		let time = getTime(today);
+		let dl = ctx.measureText(date).width;
+		let wl = ctx.measureText(week).width;
+		let tl = ctx.measureText(time).width;
+		ctx.fillText(date, (width - dl) / 2, ny - r * 0.6);	// 文字默认左下对齐
+		ctx.fillText(week, (width - wl) / 2, ny + r * 0.4);	// 文字默认左下对齐
+		ctx.strokeText(time, (width - tl) / 2, ny + r * 0.55 + r / 10 + r / 40);	// 文字默认左下对齐
 	}
 
 	function getDate(today) {
@@ -244,15 +255,15 @@
 		pctx.fill();
 
 		for (let i = 0; i < 12; i++) {
-			pctx.fillRect(-10, -r * 1.1, 20, r * 1.1);
+			pctx.fillRect(-r / 30, -r * 1.1, r / 15, r * 1.1);
 			pctx.rotate(Math.PI / 6);
 		}
 
 		pctx.lineWidth = r / 40;
 		pctx.strokeStyle = "#3B3838";
 		pctx.fillStyle = "#D1D1D1";	// 画笔色
-		pctx.fillRect(-100, r * 0.55, 200, 60);
-		pctx.strokeRect(-100, r * 0.55, 200, 60);
+		pctx.fillRect(-r / 3, r * 0.55, r * 2 / 3, r / 5);
+		pctx.strokeRect(-r / 3, r * 0.55, r * 2 / 3, r / 5);
 	}
 
 </script>
